@@ -52,8 +52,8 @@ h1, h2, h3 {
 div[data-testid="stExpander"] {
     background-color: #1a1d27 !important;
     border: 1px solid #2d3150 !important;
-    border-radius: 8px !important;
-    margin-bottom: 8px;
+    border-radius: 2px !important;
+    margin-bottom: 2px;
 }
 
 div[data-testid="stExpander"] summary {
