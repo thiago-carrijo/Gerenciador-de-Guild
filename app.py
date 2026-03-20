@@ -146,7 +146,7 @@ if "modo_edicao" not in st.session_state:
 # ─────────────────────────────────────────────
 def tela_login():
     st.markdown("<div class='login-box'>", unsafe_allow_html=True)
-    st.markdown("##⚔Sense")
+    st.markdown("## ⚔ SENSE")
     st.markdown("<p style='color:#7a7f99;font-family:monospace'>Gerenciador de Guild</p>",
                 unsafe_allow_html=True)
     st.markdown("---")
@@ -171,7 +171,7 @@ def tela_principal():
     # ── Cabeçalho ──
     col_title, col_logout = st.columns([6, 1])
     with col_title:
-        st.markdown("##⚔Gerenciador de Guild")
+        st.markdown("## ⚔ Gerenciador de Guild")
     with col_logout:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Sair", use_container_width=True):
