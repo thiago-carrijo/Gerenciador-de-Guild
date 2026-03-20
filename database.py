@@ -1,108 +1,111 @@
-import sqlite3
+import streamlit as st
+from supabase import create_client, Client
+import hashlib
 
-DB_FILE = "guild_mucabrasil.db"
-
-# ─────────────────────────────────────────────
-#  INICIALIZAÇÃO
-# ─────────────────────────────────────────────
-def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS membros (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome       TEXT NOT NULL UNIQUE,
-            recrutador TEXT,
-            telefone   TEXT
-        )
-    """)
-    # Migração: adiciona colunas caso o banco já exista sem elas
-    for col, tipo in [("recrutador", "TEXT"), ("telefone", "TEXT")]:
-        try:
-            c.execute(f"ALTER TABLE membros ADD COLUMN {col} {tipo}")
-        except sqlite3.OperationalError:
-            pass  # coluna já existe
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS contas (
-            id        INTEGER PRIMARY KEY AUTOINCREMENT,
-            membro_id INTEGER NOT NULL,
-            nome      TEXT NOT NULL,
-            FOREIGN KEY (membro_id) REFERENCES membros(id) ON DELETE CASCADE
-        )
-    """)
-    conn.commit()
-    conn.close()
-
-def get_conn():
-    conn = sqlite3.connect(DB_FILE)
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
 
 # ─────────────────────────────────────────────
-#  OPERAÇÕES DE MEMBROS
+#  CONEXÃO
 # ─────────────────────────────────────────────
-def adicionar_membro(nome, recrutador="", telefone=""):
-    with get_conn() as conn:
-        conn.execute(
-            "INSERT INTO membros (nome, recrutador, telefone) VALUES (?, ?, ?)",
-            (nome.strip(), recrutador.strip(), telefone.strip())
-        )
+@st.cache_resource
+def get_client() -> Client:
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
+    return create_client(url, key)
 
-def editar_membro(membro_id, novo_nome, recrutador="", telefone=""):
-    with get_conn() as conn:
-        conn.execute(
-            "UPDATE membros SET nome=?, recrutador=?, telefone=? WHERE id=?",
-            (novo_nome.strip(), recrutador.strip(), telefone.strip(), membro_id)
-        )
 
-def excluir_membro(membro_id):
-    with get_conn() as conn:
-        conn.execute("DELETE FROM membros WHERE id=?", (membro_id,))
+def db() -> Client:
+    return get_client()
+
 
 # ─────────────────────────────────────────────
-#  OPERAÇÕES DE CONTAS
+#  AUTENTICAÇÃO
 # ─────────────────────────────────────────────
-def adicionar_conta(membro_id, nome_conta):
-    with get_conn() as conn:
-        conn.execute(
-            "INSERT INTO contas (membro_id, nome) VALUES (?,?)",
-            (membro_id, nome_conta.strip())
-        )
+def hash_senha(senha: str) -> str:
+    return hashlib.sha256(senha.encode()).hexdigest()
 
-def renomear_conta(conta_id, novo_nome):
-    with get_conn() as conn:
-        conn.execute(
-            "UPDATE contas SET nome=? WHERE id=?",
-            (novo_nome.strip(), conta_id)
-        )
 
-def excluir_conta(conta_id):
-    with get_conn() as conn:
-        conn.execute("DELETE FROM contas WHERE id=?", (conta_id,))
+def verificar_login(login: str, senha: str) -> bool:
+    res = db().table("usuarios") \
+        .select("id") \
+        .eq("login", login.strip()) \
+        .eq("senha", hash_senha(senha)) \
+        .execute()
+    return len(res.data) > 0
+
 
 # ─────────────────────────────────────────────
-#  BUSCA
+#  MEMBROS
 # ─────────────────────────────────────────────
-def buscar(termo=""):
-    termo = f"%{termo.strip()}%"
-    with get_conn() as conn:
-        rows = conn.execute("""
-            SELECT m.id, m.nome, m.recrutador, m.telefone, c.id, c.nome
-            FROM membros m
-            LEFT JOIN contas c ON c.membro_id = m.id
-            WHERE m.nome LIKE ? OR c.nome LIKE ?
-            ORDER BY m.nome, c.nome
-        """, (termo, termo)).fetchall()
+def buscar(termo: str = "") -> list:
+    if termo.strip():
+        membros_res = db().table("membros") \
+            .select("*").ilike("nome", f"%{termo}%").order("nome").execute().data
 
-    membros = {}
-    for mid, mnome, recrutador, telefone, cid, cnome in rows:
-        if mid not in membros:
-            membros[mid] = {
-                "nome":       mnome,
-                "recrutador": recrutador or "",
-                "telefone":   telefone or "",
-                "contas":     []
-            }
-        if cid:
-            membros[mid]["contas"].append({"id": cid, "nome": cnome})
-    return membros
+        contas_res = db().table("contas") \
+            .select("membro_id").ilike("nome", f"%{termo}%").execute().data
+        ids_por_conta = [c["membro_id"] for c in contas_res]
+
+        if ids_por_conta:
+            membros_extra = db().table("membros") \
+                .select("*").in_("id", ids_por_conta).order("nome").execute().data
+            ids_ja = {m["id"] for m in membros_res}
+            for m in membros_extra:
+                if m["id"] not in ids_ja:
+                    membros_res.append(m)
+            membros_res.sort(key=lambda m: m["nome"])
+    else:
+        membros_res = db().table("membros") \
+            .select("*").order("nome").execute().data
+
+    ids = [m["id"] for m in membros_res]
+    contas_por_membro = {m["id"]: [] for m in membros_res}
+    if ids:
+        todas = db().table("contas") \
+            .select("*").in_("membro_id", ids).order("nome").execute().data
+        for c in todas:
+            contas_por_membro[c["membro_id"]].append(c)
+
+    for m in membros_res:
+        m["contas"] = contas_por_membro[m["id"]]
+
+    return membros_res
+
+
+def adicionar_membro(nome: str, recrutador: str = "", telefone: str = ""):
+    db().table("membros").insert({
+        "nome":       nome.strip(),
+        "recrutador": recrutador.strip(),
+        "telefone":   telefone.strip(),
+    }).execute()
+
+
+def editar_membro(membro_id: int, nome: str, recrutador: str = "", telefone: str = ""):
+    db().table("membros").update({
+        "nome":       nome.strip(),
+        "recrutador": recrutador.strip(),
+        "telefone":   telefone.strip(),
+    }).eq("id", membro_id).execute()
+
+
+def excluir_membro(membro_id: int):
+    db().table("membros").delete().eq("id", membro_id).execute()
+
+
+# ─────────────────────────────────────────────
+#  CONTAS
+# ─────────────────────────────────────────────
+def adicionar_conta(membro_id: int, nome_conta: str):
+    db().table("contas").insert({
+        "membro_id": membro_id,
+        "nome":      nome_conta.strip(),
+    }).execute()
+
+
+def renomear_conta(conta_id: int, novo_nome: str):
+    db().table("contas").update({
+        "nome": novo_nome.strip()
+    }).eq("id", conta_id).execute()
+
+
+def excluir_conta(conta_id: int):
+    db().table("contas").delete().eq("id", conta_id).execute()
