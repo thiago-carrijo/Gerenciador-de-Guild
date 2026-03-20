@@ -40,7 +40,7 @@ h1, h2, h3 {
 .stTextInput > div > input {
     background-color: #22263a !important;
     color: #e8eaf0 !important;
-    border: 0px solid #2d3150 !important;
+    border: 1px solid #2d3150 !important;
     border-radius: 4px !important;
 }
 
