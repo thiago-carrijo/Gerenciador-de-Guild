@@ -1,4 +1,4 @@
-**#Gerenciador de Guild**
+# Gerenciador de Guild
 
 
 Um app que gerencia a entrada, alteração e exclusão de membros da guild Sense do servidor privado do jogo Mucabrasil. O app utiliza a linguagem Python totalmente pura e com banco de dados em SQL hospedado na Supabase gratuitamente. 
