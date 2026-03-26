@@ -10,7 +10,7 @@ from database import (
 #  CONFIGURAÇÃO
 # ─────────────────────────────────────────────
 st.set_page_config(
-    page_title="Gerenciador de Guild",
+    page_title="Guild MucaBrasil",
     page_icon="⚔️",
     layout="wide",
 )
@@ -116,7 +116,7 @@ for key, val in [
 # ─────────────────────────────────────────────
 def tela_login():
     st.markdown("<div class='login-box'>", unsafe_allow_html=True)
-    st.markdown("## ⚔ SENSE")
+    st.markdown("## ⚔ MucaBrasil")
     st.markdown("<p style='color:#7a7f99;font-family:monospace'>Gerenciador de Guild</p>",
                 unsafe_allow_html=True)
     st.markdown("---")
@@ -138,7 +138,7 @@ def tela_login():
 def cabecalho():
     col_title, col_nav, col_logout = st.columns([3, 3, 1])
     with col_title:
-        st.markdown("## ⚔ SENSE")
+        st.markdown("## ⚔ Guild MucaBrasil")
     with col_nav:
         st.markdown("<br>", unsafe_allow_html=True)
         col_a, col_b = st.columns(2)
@@ -257,7 +257,7 @@ def pagina_membros():
                     if col_nao.button("✖ Cancelar", use_container_width=True):
                         st.session_state.modo_edicao = "ver"
                         st.rerun()
-                    st.stop()
+                    return  # impede renderizar o resto sem usar st.stop()
 
                 # Contas
                 st.markdown("---")
@@ -341,11 +341,13 @@ def pagina_historico():
     st.markdown("<br>", unsafe_allow_html=True)
 
     for r in registros:
-        # Formata a data
+        # Formata a data convertendo UTC → Brasília (UTC-3)
         data_raw = r.get("criado_em", "")
         try:
-            from datetime import datetime, timezone
+            from datetime import datetime, timezone, timedelta
+            tz_brasilia = timezone(timedelta(hours=-3))
             dt = datetime.fromisoformat(data_raw.replace("Z", "+00:00"))
+            dt = dt.astimezone(tz_brasilia)
             data_fmt = dt.strftime("%d/%m/%Y %H:%M:%S")
         except Exception:
             data_fmt = data_raw
