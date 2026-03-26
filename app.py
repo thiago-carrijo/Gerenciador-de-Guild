@@ -5,6 +5,7 @@ from database import (
     adicionar_membro, editar_membro, excluir_membro,
     adicionar_conta, renomear_conta, excluir_conta,
 )
+from datetime import datetime, timezone, timedelta
 
 # ─────────────────────────────────────────────
 #  CONFIGURAÇÃO
@@ -344,7 +345,6 @@ def pagina_historico():
         # Formata a data convertendo UTC → Brasília (UTC-3)
         data_raw = r.get("criado_em", "")
         try:
-            from datetime import datetime, timezone, timedelta
             tz_brasilia = timezone(timedelta(hours=-3))
             dt = datetime.fromisoformat(data_raw.replace("Z", "+00:00"))
             dt = dt.astimezone(tz_brasilia)
