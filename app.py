@@ -116,7 +116,7 @@ for key, val in [
 # ─────────────────────────────────────────────
 def tela_login():
     st.markdown("<div class='login-box'>", unsafe_allow_html=True)
-    st.markdown("## ⚔ MucaBrasil")
+    st.markdown("## ⚔ SENSE")
     st.markdown("<p style='color:#7a7f99;font-family:monospace'>Gerenciador de Guild</p>",
                 unsafe_allow_html=True)
     st.markdown("---")
