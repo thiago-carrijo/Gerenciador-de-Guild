@@ -254,7 +254,8 @@ def pagina_membros():
                         excluir_membro(mid, info["nome"], usuario)
                         st.session_state.membro_selecionado = None
                         st.session_state.modo_edicao = None
-                        st.rerun()
+                        st.success(f"Membro '{info['nome']}' excluído com sucesso!")
+                        st.stop()
                     if col_nao.button("✖ Cancelar", use_container_width=True):
                         st.session_state.modo_edicao = "ver"
                         st.rerun()

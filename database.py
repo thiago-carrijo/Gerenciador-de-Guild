@@ -121,6 +121,9 @@ def editar_membro(membro_id: int, nome_antigo: str, nome: str,
 
 
 def excluir_membro(membro_id: int, nome: str = "", usuario: str = ""):
+    # Primeiro, deletar todas as contas associadas ao membro
+    db().table("contas").delete().eq("membro_id", membro_id).execute()
+    # Depois, deletar o membro
     db().table("membros").delete().eq("id", membro_id).execute()
     registrar_log(usuario, "Excluiu membro", f"Membro: {nome}")
 
