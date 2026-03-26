@@ -10,7 +10,7 @@ from database import (
 #  CONFIGURAÇÃO
 # ─────────────────────────────────────────────
 st.set_page_config(
-    page_title="Guild MucaBrasil",
+    page_title="Gerenciador de Guild",
     page_icon="⚔️",
     layout="wide",
 )
@@ -138,7 +138,7 @@ def tela_login():
 def cabecalho():
     col_title, col_nav, col_logout = st.columns([3, 3, 1])
     with col_title:
-        st.markdown("## ⚔ Guild MucaBrasil")
+        st.markdown("## ⚔ SENSE")
     with col_nav:
         st.markdown("<br>", unsafe_allow_html=True)
         col_a, col_b = st.columns(2)
