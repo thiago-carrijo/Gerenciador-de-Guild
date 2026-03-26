@@ -255,7 +255,7 @@ def pagina_membros():
                         st.session_state.membro_selecionado = None
                         st.session_state.modo_edicao = None
                         st.success(f"Membro '{info['nome']}' excluído com sucesso!")
-                        st.stop()
+                        st.rerun()
                     if col_nao.button("✖ Cancelar", use_container_width=True):
                         st.session_state.modo_edicao = "ver"
                         st.rerun()
